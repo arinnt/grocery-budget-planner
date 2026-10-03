@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Grocery Budget Planner</title>
+  <style>
+    :root {
+      --primary-blue: #1a73e8;
+      --accent-red: #e53935;
+      --accent-green: #43a047;
+      --accent-orange: #fb8c00;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-dark: #202124;
+      --text-muted: #5f6368;
+      --border-color: #dadce0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-dark);
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .planner-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 720px;
+      padding: 28px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background-color: #f1f3f4;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-box.surplus {
+      background-color: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .stat-box.deficit {
+      background-color: #ffebee;
+      color: #b71c1c;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .progress-container {
+      margin-bottom: 28px;
+    }
+
+    .progress-bar {
+      height: 12px;
+      background-color: #e0e0e0;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .progress-segment {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .category-group {
+      margin-bottom: 24px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .category-header {
+      background-color: #f8f9fa;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .category-body {
+      padding: 16px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 3fr;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .input-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .input-label {
+      font-size: 14px;
+      color: var(--text-dark);
+    }
+
+    .input-val {
+      font-size: 14px;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary-blue);
+    }
+
+    .budget-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .budget-control label {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .budget-control input {
+      padding: 6px 12px;
+      font-size: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      width: 100px;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="planner-card">
+    <header>
+      <h1>Monthly Grocery Budget Planner</h1>
+      <p class="subtitle">Adjust your category spending to stay within your goal.</p>
+    </header>
+
+    <div class="budget-control">
+      <label for="monthly-budget">Monthly Budget Target ($):</label>
+      <input type="number" id="monthly-budget" value="200" min="50" max="1000" step="10">
+    </div>
+
+    <div class="summary-grid">
+      <div class="stat-box">
+        <div class="stat-label">Total Allocated</div>
+        <div class="stat-value" id="total-spent">$200</div>
+      </div>
+      <div class="stat-box surplus" id="status-box">
+        <div class="stat-label" id="status-label">Remaining Surplus</div>
+        <div class="stat-value" id="remaining-budget">$0</div>
+      </div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div class="progress-segment" id="seg-breakfast" style="background-color: var(--primary-blue); width: 16%;"></div>
+        <div class="progress-segment" id="seg-protein" style="background-color: var(--accent-red); width: 36%;"></div>
+        <div class="progress-segment" id="seg-grains" style="background-color: var(--accent-green); width: 26%;"></div>
+        <div class="progress-segment" id="seg-pantry" style="background-color: var(--accent-orange); width: 22%;"></div>
+      </div>
+    </div>
+
+    <form id="planner-form">
+      <!-- Breakfast -->
+      <div class="category-group">
+        <div class="category-header">
+          <span style="color: var(--primary-blue);">Breakfast Staples</span>
+          <span id="cat-total-breakfast">$32</span>
+        </div>
+        <div class="category-body">
+          <div class="input-row">
+            <span class="input-label">Rolled Oats & PB</span>
+            <span class="input-val" id="val-oats">$16</span>
+            <input type="range" class="item-slider" data-cat="breakfast" id="oats" value="16" min="0" max="40">
+          </div>
+          <div class="input-row">
+            <span class="input-label">Bananas & Fruit</span>
+            <span class="input-val" id="val-bananas">$16</span>
+            <input type="range" class="item-slider" data-cat="breakfast" id="bananas" value="16" min="0" max="30">
+          </div>
+        </div>
+      </div>
+
+      <!-- Proteins -->
+      <div class="category-group">
+        <div class="category-header">
+          <span style="color: var(--accent-red);">Proteins & Beans</span>
+          <span id="cat-total-protein">$72</span>
+        </div>
+        <div class="category-body">
+          <div class="input-row">
+            <span class="input-label">Ground Poultry</span>
+            <span class="input-val" id="val-poultry">$54</span>
+            <input type="range" class="item-slider" data-cat="protein" id="poultry" value="54" min="0" max="100" step="2">
+          </div>
+          <div class="input-row">
+            <span class="input-label">Dry Black Beans</span>
+            <span class="input-val" id="val-beans">$18</span>
+            <input type="range" class="item-slider" data-cat="protein" id="beans" value="18" min="0" max="40">
+          </div>
+        </div>
+      </div>
+
+      <!-- Grains & Produce -->
+      <div class="category-group">
+        <div class="category-header">
+          <span style="color: var(--accent-green);">Grains & Produce</span>
+          <span id="cat-total-grains">$52</span>
+        </div>
+        <div class="category-body">
+          <div class="input-row">
+            <span class="input-label">Long Grain Rice</span>
+            <span class="input-val" id="val-rice">$12</span>
+            <input type="range" class="item-slider" data-cat="grains" id="rice" value="12" min="0" max="30">
+          </div>
+          <div class="input-row">
+            <span class="input-label">Fresh / Frozen Kale</span>
+            <span class="input-val" id="val-kale">$24</span>
+            <input type="range" class="item-slider" data-cat="grains" id="kale" value="24" min="0" max="50">
+          </div>
+          <div class="input-row">
+            <span class="input-label">Onions & Garlic</span>
+            <span class="input-val" id="val-onions">$16</span>
+            <input type="range" class="item-slider" data-cat="grains" id="onions" value="16" min="0" max="30">
+          </div>
+        </div>
+      </div>
+
+      <!-- Pantry & Cushion -->
+      <div class="category-group">
+        <div class="category-header">
+          <span style="color: var(--accent-orange);">Pantry & Cushion</span>
+          <span id="cat-total-pantry">$44</span>
+        </div>
+        <div class="category-body">
+          <div class="input-row">
+            <span class="input-label">Spices & Oil</span>
+            <span class="input-val" id="val-spices">$28</span>
+            <input type="range" class="item-slider" data-cat="pantry" id="spices" value="28" min="0" max="50">
+          </div>
+          <div class="input-row">
+            <span class="input-label">Tax & Buffer</span>
+            <span class="input-val" id="val-tax">$16</span>
+            <input type="range" class="item-slider" data-cat="pantry" id="tax" value="16" min="0" max="30">
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <footer>
+      Keep overall expenses at or under your monthly goal to build consistency.
+    </footer>
+  </div>
+
+  <script>
+    const sliders = document.querySelectorAll('.item-slider');
+    const budgetInput = document.getElementById('monthly-budget');
+
+    function calculatePlanner() {
+      const budgetTarget = parseFloat(budgetInput.value) || 0;
+      let totalSpent = 0;
+
+      const catTotals = {
+        breakfast: 0,
+        protein: 0,
+        grains: 0,
+        pantry: 0
+      };
+
+      sliders.forEach(slider => {
+        const val = parseFloat(slider.value) || 0;
+        const id = slider.id;
+        const cat = slider.dataset.cat;
+
+        document.getElementById(`val-${id}`).textContent = `$${val}`;
+        catTotals[cat] += val;
+        totalSpent += val;
+      });
+
+      // Update Category Totals
+      document.getElementById('cat-total-breakfast').textContent = `$${catTotals.breakfast}`;
+      document.getElementById('cat-total-protein').textContent = `$${catTotals.protein}`;
+      document.getElementById('cat-total-grains').textContent = `$${catTotals.grains}`;
+      document.getElementById('cat-total-pantry').textContent = `$${catTotals.pantry}`;
+
+      // Update Overall Summary
+      document.getElementById('total-spent').textContent = `$${totalSpent}`;
+      
+      const diff = budgetTarget - totalSpent;
+      const statusBox = document.getElementById('status-box');
+      const statusLabel = document.getElementById('status-label');
+      const remainingVal = document.getElementById('remaining-budget');
+
+      if (diff >= 0) {
+        statusBox.className = 'stat-box surplus';
+        statusLabel.textContent = 'Remaining Surplus';
+        remainingVal.textContent = `$${diff}`;
+      } else {
+        statusBox.className = 'stat-box deficit';
+        statusLabel.textContent = 'Over Budget';
+        remainingVal.textContent = `$${Math.abs(diff)}`;
+      }
+
+      // Update Progress Bar Segments
+      const totalForPct = totalSpent > 0 ? totalSpent : 1;
+      document.getElementById('seg-breakfast').style.width = `${(catTotals.breakfast / totalForPct) * 100}%`;
+      document.getElementById('seg-protein').style.width = `${(catTotals.protein / totalForPct) * 100}%`;
+      document.getElementById('seg-grains').style.width = `${(catTotals.grains / totalForPct) * 100}%`;
+      document.getElementById('seg-pantry').style.width = `${(catTotals.pantry / totalForPct) * 100}%`;
+    }
+
+    sliders.forEach(slider => slider.addEventListener('input', calculatePlanner));
+    budgetInput.addEventListener('input', calculatePlanner);
+
+    // Initial calculation
+    calculatePlanner();
+  </script>
+</body>
+</html>
